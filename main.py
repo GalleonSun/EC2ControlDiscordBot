@@ -12,14 +12,17 @@ INSTANCE_ID = os.getenv('AWS_INSTANCE_ID')
 bot = commands.Bot(command_prefix="/", intents=discord.Intents.all())
 
 # AWS EC2クライアントの初期化
-ec2 = boto3.client('ec2', region_name=AWS_REGION)
+#ec2 = boto3.client('ec2', region_name=AWS_REGION)
+ec2 = boto3.resource("ec2", region_name=AWS_REGION)
+instance = ec2.Instance(INSTANCE_ID)
 
 @bot.command(name='start')
 async def start_instance(ctx):
     try:
-        ec2.start_instances(InstanceIds=[INSTANCE_ID])
-        response = f'Instance palworld has been started.'
-        #response = "Hello world"
+        instance.start()
+        instance.wait_until_running()
+        ip = instance.public_ip_address
+        response = f'Instance palworld has been started.\n Please Login through {ip}:8211'
     except Exception as e:
         response = f'Error: {e}'
     
@@ -28,7 +31,8 @@ async def start_instance(ctx):
 @bot.command(name='stop')
 async def stop_instance(ctx):
     try:
-        ec2.stop_instances(InstanceIds=[INSTANCE_ID])
+        instance.stop()
+        instance.wait_until_stopped()
         response = f'Instance palworld has been stoped.'
         #response = "Hello world"
     except Exception as e:
